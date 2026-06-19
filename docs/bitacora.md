@@ -66,6 +66,43 @@ El objetivo de esta bitácora es que la sección de Metodología del informe fin
 
 ---
 
-## Entrada 6 — [pendiente]
+## Entrada 6 — 18/06/2026 — Separación entre redacción del LLM y datos determinísticos
 
-*(Próxima entrada: decisiones tomadas durante la construcción de v2 — generación de la explicación de la alerta mediante IA generativa.)*
+**Decisión:** el LLM no genera el mensaje completo de la alerta. Solo redacta el párrafo de "fundamento normativo y de práctica" a partir del JSON ya calculado por la lógica determinística (`verificar_consistencia()`). El resto del informe (resultado, valores de los tres campos, advertencia final sobre validación humana) se ensambla con un template de texto fijo, sin intervención del LLM.
+
+**Alternativa descartada:** pedirle al LLM que generara el mensaje completo de la alerta a partir de los datos crudos de la Orden de Compra.
+
+**Fundamento:** si el LLM redactara el mensaje completo cada vez, existiría el riesgo de que alterara o redondeara mal alguno de los valores numéricos, o citara mal el artículo del pliego si no se le da con precisión en cada llamada. Separando las responsabilidades, los números y el resultado (CONCORDANTE / DISCREPANCIA / DATO_INCOMPLETO) siempre provienen de la lógica determinística de Python, y el LLM se usa exclusivamente donde aporta valor real: lenguaje natural con matices (la distinción entre lectura literal de la norma y práctica administrativa), no aritmética ni citas exactas.
+
+---
+
+## Entrada 7 — 18/06/2026 — Diseño y prueba del prompt de generación de alertas (Google AI Studio, Gemini 3 Flash Preview)
+
+**Decisión:** se diseñó un prompt de instrucciones de sistema con seis reglas explícitas, y se probó contra los tres resultados posibles de la verificación (CONCORDANTE, DISCREPANCIA, DATO_INCOMPLETO) usando los casos de prueba reales del proyecto.
+
+**Configuración usada:** Gemini 3 Flash Preview, con "Grounding with Google Search" desactivado (no se necesita búsqueda externa para esta tarea) y Thinking level en "Medium".
+
+**Resultado de las pruebas:**
+- Caso 2 (discrepancia, duración=15 vs. resto=10): el modelo citó correctamente el Artículo 19 del Pliego, mantuvo la distinción entre "máximo" (norma) y "criterio de igualdad estricta" (práctica), y no alteró ningún valor numérico.
+- Caso 1 (concordante, los tres valores=10): el modelo confirmó la coincidencia sin forzar la distinción norma/práctica, que solo corresponde al caso de discrepancia (regla 3 del prompt).
+- Caso 4 (dato incompleto, duración=null): este era el caso de mayor riesgo, porque los otros dos campos coinciden en 10 días y existía la posibilidad de que el modelo "completara" el patrón asumiendo que el campo faltante también valía 10. El modelo señaló explícitamente la ausencia del dato y no asumió ningún valor en su lugar — la regla 4 del prompt se cumplió en la prueba.
+
+**Por qué importa documentar que se probó específicamente este riesgo:** que el modelo no haya alucinado el dato faltante no es un resultado automático de cualquier prompt — es el resultado de un prompt diseñado con esa regla explícita, probado deliberadamente contra el caso donde ese error era más probable. Esta distinción (diseño + prueba dirigida, no "salió bien porque sí") es la que se documenta en el informe como evidencia de rigor metodológico.
+
+---
+
+## Entrada 8 — 18/06/2026 — Error propio durante la edición de `verificador.py`: pérdida accidental de una función existente
+
+**Qué pasó:** al agregar las funciones `formatear_valor_campo()` y `ensamblar_informe()` a `verificador.py`, la edición reemplazó por error la línea que contenía la firma de la función `procesar_orden_compra()` (ya existente desde v1), eliminándola del archivo sin que fuera intencional.
+
+**Cómo se detectó:** al ejecutar el script para probar el ensamblado del template contra los casos reales, Python arrojó un `ImportError` indicando que la función no existía en el módulo.
+
+**Corrección:** se reinsertó la función `procesar_orden_compra()` inmediatamente después de `ensamblar_informe()`, y se volvió a ejecutar la prueba completa contra los Casos 2 y 4 antes de dar por válido el archivo.
+
+**Por qué se documenta este error:** es un ejemplo concreto de "qué salió mal y cómo se corrigió" tal como lo pide la consigna del TFI. No se descubrió por revisión visual del código, sino porque la ejecución falló — lo cual refuerza por qué cada cambio al script se vuelve a probar contra los casos de `/casos_prueba` antes de considerarlo cerrado, en lugar de asumir que una edición fue exitosa sin volver a correr las pruebas.
+
+---
+
+## Entrada 9 — [pendiente]
+
+*(Próxima entrada: decisiones tomadas durante v3 — manejo de casos límite adicionales e integración completa en Google AI Studio.)*
