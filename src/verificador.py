@@ -1,4 +1,4 @@
-python# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 v1 — Extracción de campos + lógica de comparación (SIN generación de IA todavía).
 
@@ -15,6 +15,13 @@ para la regla de consistencia interna de plazos:
 Decisión de diseño (ver /docs/bitacora.md, Entrada 1): el plazo del Pliego
 se aplica como valor EXACTO, no como máximo, por criterio de práctica
 administrativa real, no por lectura literal del Artículo 19.
+
+v2 — Se agrega el ensamblado del informe final (ver /docs/bitacora.md,
+Entrada 6): el LLM (Gemini, vía Google AI Studio) solo redacta el párrafo
+de "fundamento normativo y de práctica" a partir del resultado ya calculado
+acá. La generación de ese párrafo NO está implementada en este script — se
+ejecuta por fuera, en Google AI Studio, y se recibe como parámetro de texto
+en ensamblar_informe().
 """
 
 import re
@@ -160,6 +167,60 @@ def verificar_consistencia(campos: dict) -> dict:
         "observacion": observacion,
         "detalle": campos,
     }
+
+
+def formatear_valor_campo(valor) -> str:
+    """Formatea un valor de campo para mostrar en el template final.
+    Los campos no consignados (None) se muestran como [NO CONSIGNADO],
+    coherente con el marcado visual usado en los PDFs de casos de prueba."""
+    if valor is None:
+        return "[NO CONSIGNADO]"
+    return f"{valor} días"
+
+
+def ensamblar_informe(resultado_verificacion: dict, parrafo_llm: str) -> str:
+    """
+    Ensambla el informe final combinando el template fijo (determinístico,
+    sin IA) con el párrafo de fundamento normativo y de práctica generado
+    por el LLM (ver /docs/bitacora.md, Entrada 6).
+
+    El párrafo del LLM se recibe como parámetro porque su generación ocurre
+    fuera de este script en esta etapa del proyecto (ver decisión de diseño:
+    integración con Gemini vía Google AI Studio, no implementada en este
+    repositorio). Esta función solo ensambla el resultado, no llama al LLM.
+    """
+    detalle = resultado_verificacion["detalle"]
+    resultado = resultado_verificacion["resultado"]
+
+    encabezado = (
+        "═" * 49 + "\n"
+        "VERIFICACIÓN DE CONCORDANCIA — ORDEN DE COMPRA\n"
+        "Convenio Marco: Artículos de Limpieza (PLIEG-2025-22986458-GDEBA-DATOPCGP)\n"
+        + "═" * 49
+    )
+
+    campos = (
+        f"Resultado: {resultado}\n\n"
+        "Campos verificados:\n"
+        f"  • Duración del contrato:        {formatear_valor_campo(detalle.get('duracion_contrato'))}\n"
+        f"  • Plazo de entrega (detalle):   {formatear_valor_campo(detalle.get('plazo_entrega_detalle'))}\n"
+        f"  • Plazo fijado por el Pliego:   {formatear_valor_campo(detalle.get('plazo_pliego'))}"
+    )
+
+    fundamento = (
+        "─" * 41 + "\n"
+        "Fundamento normativo y de práctica:\n"
+        f"{parrafo_llm}\n"
+        + "─" * 41
+    )
+
+    advertencia = (
+        "⚠ Este resultado es un borrador de verificación preliminar.\n"
+        "No constituye evidencia de auditoría ni reemplaza la validación\n"
+        "de un responsable humano."
+    )
+
+    return f"{encabezado}\n\n{campos}\n\n{fundamento}\n\n{advertencia}"
 
 
 def procesar_orden_compra(path_pdf: str) -> dict:
