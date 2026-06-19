@@ -42,6 +42,30 @@ El objetivo de esta bitácora es que la sección de Metodología del informe fin
 
 ---
 
-## Entrada 4 — [pendiente]
+## Entrada 4 — 18/06/2026 — Fragmentación del campo "Plazo de entrega" en el texto del PDF
 
-*(Próxima entrada: decisiones tomadas durante la construcción de v1 — extracción de campos del PDF y lógica de comparación.)*
+**Decisión:** la extracción del campo "Plazo de entrega" (Detalle de entrega) no se busca como una línea de texto única, sino con una expresión regular que permite que el patrón "Durante los X Días corridos" aparezca seguido de saltos de línea antes del resto de la cláusula ("a partir del Perfeccionamiento del documento contractual").
+
+**Alternativa descartada:** asumir que cada campo del PDF corresponde a una sola línea de texto extraído (lectura línea por línea), que era el supuesto inicial de diseño.
+
+**Fundamento:** al inspeccionar el texto crudo extraído del PDF (no la imagen visual) antes de escribir el código de extracción, se encontró que el campo de plazo de entrega se fragmenta en cuatro líneas distintas en el texto subyacente, aunque visualmente se presenta como una sola celda de tabla. El layout fijo del documento (confirmado previamente) es válido a nivel visual, pero no garantiza que el texto interno del PDF respete esa misma estructura. Esto requirió diseñar la extracción contra el texto real, no contra la apariencia del documento.
+
+**Por qué importa documentarlo así:** es un ejemplo concreto de un supuesto de diseño que resultó incompleto y que se corrigió antes de que generara errores silenciosos. Si el patrón se hubiera buscado solo dentro de una línea, el campo de plazo de entrega no se habría podido extraer nunca, y el sistema habría reportado "dato incompleto" en todos los casos, incluido el concordante.
+
+---
+
+## Entrada 5 — 18/06/2026 — Agrupamiento de discrepancias múltiples en una sola observación
+
+**Decisión:** cuando la regla de consistencia de plazos detecta una discrepancia, el sistema identifica cuál de los tres campos verificados es el que se aparta de los otros dos, y redacta una única observación señalando ese campo — en lugar de listar cada comparación de a pares como una discrepancia independiente.
+
+**Alternativa descartada:** la primera versión de la lógica comparaba cada par de campos por separado (duración vs. pliego, detalle vs. pliego, duración vs. detalle) y devolvía una lista con todas las comparaciones que fallaban. Esto producía, en el caso de un solo campo desviado, dos "discrepancias" reportadas que en los hechos describían el mismo problema visto desde dos ángulos.
+
+**Fundamento:** decisión de criterio propio sobre cómo debe leerse un resultado de control en la práctica — un controlador no necesita que se le señale la misma desviación dos veces con redacciones distintas, necesita identificar rápido cuál es el campo mal cargado. Se ajustó la lógica para que, cuando dos de los tres valores coincidan entre sí, el sistema señale explícitamente cuál es el valor que se aparta, y solo en el caso (sin ejemplo de prueba disponible) de que los tres valores fueran distintos entre sí, se informen los tres por separado.
+
+**Nota:** el caso de "los tres valores distintos entre sí" está contemplado en el código pero no fue verificado contra ningún PDF de prueba real, porque no se diseñó un caso de prueba para ese escenario. Queda registrado como una rama de la lógica no probada empíricamente, a diferencia del resto de las reglas, que sí fueron validadas contra los cuatro casos de `/casos_prueba`.
+
+---
+
+## Entrada 6 — [pendiente]
+
+*(Próxima entrada: decisiones tomadas durante la construcción de v2 — generación de la explicación de la alerta mediante IA generativa.)*
