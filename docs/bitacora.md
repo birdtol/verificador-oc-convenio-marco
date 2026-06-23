@@ -103,6 +103,16 @@ El objetivo de esta bitácora es que la sección de Metodología del informe fin
 
 ---
 
-## Entrada 9 — [pendiente]
+## Entrada 9 — 23/06/2026 — Caso de prueba para la rama de "discordancia total" (tres valores distintos)
 
-*(Próxima entrada: decisiones tomadas durante v3 — manejo de casos límite adicionales e integración completa en Google AI Studio.)*
+**Decisión:** se diseñó y agregó un quinto caso de prueba (`Caso_5_Discordancia_Total.pdf`) con los tres campos verificados en valores distintos entre sí (Duración del contrato = 12 días, Plazo de entrega del detalle = 8 días, Plazo fijado por el Pliego = 10 días), para validar empíricamente la rama de la lógica de comparación que hasta este punto solo existía en el código sin haber sido probada contra un documento real (ver Entrada 5).
+
+**Resultado de la prueba:** el sistema identificó correctamente que ningún par de valores coincide entre sí, y aplicó la rama de reporte que informa los tres valores por separado ("Los tres campos verificados no coinciden entre sí..."), en lugar de forzar la identificación de un único "campo desviado" — que es el comportamiento correcto para este escenario, distinto del usado en los Casos 2 y 3 (donde dos de los tres valores sí coinciden).
+
+**Por qué importa documentarlo:** cierra una limitación que había quedado explícitamente registrada en la Entrada 5 ("rama de la lógica no probada empíricamente"). El código no cambió — la lógica ya estaba escrita correctamente desde v1 — pero ahora existe evidencia concreta de que se comporta como se diseñó, no solo una expectativa teórica.
+
+---
+
+## Entrada 10 — [pendiente]
+
+*(Próxima entrada: integración completa en Google AI Studio — conexión automática entre el resultado de verificador.py y la llamada al modelo de Gemini.)*
