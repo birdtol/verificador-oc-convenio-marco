@@ -1,0 +1,6 @@
+{
+  "name": "Verificación de Concordancia Convenio Marco PBA",
+  "description": "Herramienta administrativa para validar la concordancia de plazos de Órdenes de Compra de la Provincia de Buenos Aires.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
