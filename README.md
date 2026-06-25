@@ -3,7 +3,7 @@
 > Trabajo Final Integrador — Diplomatura en IA Aplicada a Entornos Digitales de Gestión (FCE-UBA, Cohorte 2026)
 > Autor: Nicolás Paolucci
 
-**Estado actual: v0 — Definición de alcance y casos de prueba. Sin lógica de extracción ni comparación implementada todavía.**
+**Estado actual: v3 — Aplicación web completa desplegada. Extracción de PDF en el navegador, comparación de los tres puntos de verificación, y generación de fundamento normativo y de práctica vía Gemini. Demo pública: https://verificaci-n-de-concordancia-convenio-marco-pba-872200808165.us-west1.run.app**
 
 ## El problema
 
@@ -14,6 +14,8 @@ Es una tarea repetitiva, basada en criterio profesional específico, y propensa 
 ## Qué hace este prototipo (alcance del MVP)
 
 El sistema verifica **una sola regla de consistencia interna de plazos**, aplicada a Órdenes de Compra de **un único Convenio Marco** (Convenio Marco para la adquisición de artículos de limpieza y afines, Pliego PLIEG-2025-22986458-GDEBA-DATOPCGP, Proceso PBAC N° 614-0563-LPU25).
+
+A partir de v3, el sistema funciona como una aplicación web: el usuario carga el PDF de la Orden de Compra directamente en el navegador, donde se extraen los tres valores a verificar, se aplica la regla de consistencia, y un modelo de lenguaje (Gemini) redacta el párrafo de fundamento normativo y de práctica a partir del resultado ya calculado — no genera el veredicto, solo la explicación en lenguaje natural de un resultado que la lógica determinística ya resolvió (ver /docs/bitacora.md, Entrada 6).
 
 La regla tiene tres puntos de verificación que deben coincidir entre sí:
 
@@ -50,25 +52,26 @@ Cada PDF de caso de prueba incluye un encabezado visible que lo identifica como 
 |---|---|
 | **Control** | El sistema señala discrepancias y las fundamenta; no decide ni ejecuta ninguna acción administrativa. La validación final queda siempre en una persona, conforme al principio de centralidad de la persona humana (Art. 6.III de la Resolución de IA de PBA). |
 | **Protección** | Datos 100% sintéticos. Ningún dato personal o información contractual real es procesado, cargado ni almacenado por el sistema. |
-| **Agilidad** | El sistema se inserta en el flujo de trabajo real existente (carga de PDF de Orden de Compra tal como llega en el expediente digital), sin imponer un formato de entrada nuevo. |
-| **Fluidez** | Pendiente de desarrollo y reflexión en versiones siguientes, a medida que se prueben los casos límite. |
+| **Agilidad** | La verificación manual de los tres campos contra el pliego (ubicar valores en la Orden de Compra, comparar contra el Convenio Marco, redactar la observación) toma entre 5 y 7 minutos por documento, según cronometraje propio del autor en su rol de control en la Contaduría General. El sistema desplegado (v3) completa el mismo proceso — extracción, comparación y redacción del fundamento — en 2 a 3 segundos por documento. La reducción no elimina la revisión humana del resultado (ver dimensión Control), pero libera el tiempo que antes se usaba en la tarea mecánica de ubicar y comparar valores, dejándolo disponible para el juicio profesional sobre el caso. |
+| **Fluidez** | El flujo de uso es directo: cargar el PDF, obtener resultado y fundamento en 2-3 segundos, sin pasos intermedios para el usuario final. Sin embargo, ajustar el comportamiento del modelo generativo vía prompt no resultó igualmente fluido: dos intentos de corrección de una ambigüedad puntual en la redacción libre del fundamento no modificaron el resultado generado, sin que se haya podido establecer con certeza la causa (ver /docs/bitacora.md, Entrada 13). La fluidez del producto final para el usuario de control no implica fluidez equivalente en el proceso de ajuste fino del comportamiento del LLM durante el desarrollo. |
 
 ## Estructura del repositorio
 
 ```
-/casos_prueba       → Órdenes de Compra ficticias usadas como input de prueba
+/app                → Aplicación web completa (v3), construida en Google AI Studio. Desplegada en Cloud Run.
+/casos_prueba       → Órdenes de Compra ficticias usadas como input de prueba (5 casos)
 /docs               → Pliego de referencia, bitácora metodológica
-/src                → Código del sistema (a partir de v1)
+/src                → Lógica de extracción y comparación: verificador.py (v1, Python) y verificador.js (puerto a JavaScript, base de la integración en /app)
 README.md           → Este archivo
 ```
 
 ## Plan de versiones
 
-- **v0 (actual):** definición de alcance, casos de prueba, documentación inicial.
-- **v1:** extracción de campos del PDF (parsing determinístico) + comparación de los tres puntos de verificación, sin redacción de alertas todavía.
-- **v2:** generación de la explicación de cada alerta mediante IA generativa, citando el artículo del pliego correspondiente.
-- **v3:** ajustes a partir de casos límite (ej.: manejo de campos no consignados en la Orden de Compra).
-- **v4 (si el tiempo lo permite):** documentación final y registro de extensiones futuras no implementadas.
+- **v0**: definición de alcance y casos de prueba ficticios (Entradas 1-3 de la bitácora)
+- **v1**: extracción determinística de campos del PDF (pdfplumber + regex) y lógica de comparación de los tres puntos de verificación, sin redacción de alertas (Entradas 4-5).
+- **v2**: generación del párrafo de fundamento normativo y de práctica mediante Gemini 3 Flash Preview, con prompt de 6 reglas explícitas, probado contra los tres resultados posibles (Entradas 6-7).
+- **v3**: puerto de la lógica a JavaScript (pdf.js) e integración completa en una aplicación web construida en Google AI Studio — extracción en el navegador, comparación y generación de fundamento en un solo flujo, con migración no decidida a Gemini 3.5 Flash detectada y validada, y despliegue público en Cloud Run (Entradas 8-14).
+- **v4 (no realizada)**: quedó fuera de alcance por límite de tiempo frente a la fecha de entrega; ver sección "Qué NO hace este prototipo" para las extensiones identificadas y conscientemente no implementadas.
 
 ## Por qué este enfoque y no otro
 
