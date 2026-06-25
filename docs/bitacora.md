@@ -113,6 +113,47 @@ El objetivo de esta bitácora es que la sección de Metodología del informe fin
 
 ---
 
-## Entrada 10 — [pendiente]
+Te paso el bloque completo, listo para copiar y pegar tal cual en GitHub:
+Entrada 10 — 23/06/2026 — Integración completa en Google AI Studio
+Decisión: se construyó la aplicación web completa de v3 directamente en Google AI Studio, integrando en un solo proyecto la extracción de PDF en el navegador (puerto de la lógica de verificador.js usando pdf.js), la lógica de comparación, y la llamada al modelo de Gemini para la generación del párrafo de fundamento (vía un endpoint propio en server.ts, no llamado directamente desde el cliente).
 
-*(Próxima entrada: integración completa en Google AI Studio — conexión automática entre el resultado de verificador.py y la llamada al modelo de Gemini.)*
+Fundamento: este paso reemplaza la separación previa entre script de extracción/comparación (Python/JS, probado en entorno de desarrollo) y la generación de texto con LLM (probada por separado en v2), unificando todo en una sola aplicación funcional desplegable, conforme al flujo validado del curso (AI Studio → GitHub → Supabase → Vercel, aunque sin la etapa de Supabase, ver Entrada 3).
+
+Entrada 11 — 23/06/2026 — Resolución de CORS en la carga de PDF dentro de la app web (v3)
+Qué pasó: al integrar la extracción de PDF directamente en el navegador, la carga del archivo fallaba por una restricción de CORS al intentar cargar el worker de pdf.js.
+
+Cómo se detectó: la app mostraba el flujo funcionando con un caso simulado (datos hardcodeados para pruebas), pero esa prueba no pasaba por la extracción real de PDF — por lo tanto no validaba el problema. Se exigió una prueba con un PDF real (Caso_1_Concordante.pdf) antes de aceptar que el flujo estaba resuelto, en lugar de confiar en el resultado del caso simulado.
+
+Qué resolvió la herramienta: Gemini implementó una solución usando Blob URL para evitar el conflicto de CORS al cargar el worker de pdf.js.
+
+Verificación: la prueba con el PDF real confirmó que la extracción funciona correctamente sobre un documento real, no solo sobre datos de prueba precargados.
+
+Limitación no resuelta, documentada honestamente: en paralelo a esta corrección, el contador de errores y advertencias del entorno de AI Studio aumentó de forma sostenida (de 3 a 9 errores, de 2 a 14 advertencias) sin que se haya identificado la causa de esa acumulación. No impidió que la app funcionara en los casos de prueba ejecutados, pero queda como una limitación abierta del proceso de desarrollo asistido por IA: cada corrección puntual no necesariamente limpia código o advertencias previas.
+
+Entrada 12 — 23/06/2026 — Migración no decidida del modelo de Gemini entre v2 y v3
+Qué pasó: la Entrada 7 documenta la elección y prueba deliberada de Gemini 3 Flash Preview (model: "gemini-3-flash-preview") para la generación del párrafo de fundamento. Al revisar server.ts durante la integración a GitHub (v3), la línea de llamada al modelo usa model: "gemini-3.5-flash" — una versión distinta a la decidida.
+
+Cómo se detectó: no por revisión visual del código en busca de errores, sino al cruzar el código real contra la bitácora, verificando que lo implementado coincidiera con lo documentado como decisión propia.
+
+Qué resolvió la herramienta, sin que se lo pidiera: al generar la app completa en AI Studio, Gemini usó gemini-3.5-flash en server.ts sin que esto fuera una instrucción explícita ni una decisión consciente de mi parte. Se verificó contra la documentación oficial de Google que "gemini-3.5-flash" es la migración recomendada y sucesora de "gemini-3-flash-preview" (modelo preview, sin garantía de disponibilidad a largo plazo) — es decir, no es un nombre inválido ni un error de la herramienta, sino una actualización a la versión estable recomendada por el proveedor.
+
+Decisión tomada: mantener gemini-3.5-flash en lugar de revertir a la versión preview, dado que es la versión de disponibilidad general recomendada. Se re-ejecutaron los casos de prueba para confirmar que el comportamiento documentado en la Entrada 7 se sostiene contra la nueva versión del modelo (ver Entrada 13 para el resultado de esa verificación, incluyendo un comportamiento que no se sostuvo).
+
+Por qué importa documentarlo así: es un ejemplo concreto de un cambio que la herramienta introdujo por su cuenta entre etapas del proyecto, detectado solo por verificación cruzada deliberada contra la bitácora, no porque la app fallara o lo mostrara en pantalla. Es relevante para la dimensión "bajo supervisión humana" del framework AIBPS: una migración de modelo no solicitada, aunque termine siendo una mejora técnica, requiere que el desarrollador la detecte activamente para poder dar cuenta de qué versión está realmente en producción.
+
+Entrada 13 — 23/06/2026 — Intento de corrección de ambigüedad en la frase introductoria libre (regla 2): dos correcciones fallidas, causa no diagnosticada
+Punto de partida: al validar el Caso 2 (discrepancia: Duración del Contrato=15, Plazo de Entrega=10, Plazo de Pliego=10) contra gemini-3.5-flash, el párrafo generado contenía una frase introductoria ambigua: "el plazo de duración de contrato (15 días) o de entrega (10 días) no coinciden con el plazo del Pliego" — el conector "o" no deja claro cuál de los dos campos es el que realmente se aparta del Pliego.
+
+Primer intento de corrección: se modificó la regla 2 del prompt agregando una instrucción explícita para identificar con precisión el campo desviado y una prohibición directa de usar la conjunción "o" entre campos en discrepancia. Se verificó el cambio carácter por carácter en server.ts, se recargó la app y se volvió a correr el Caso 2.
+
+Resultado del primer intento: el párrafo generado fue idéntico al original, palabra por palabra.
+
+Segundo intento de corrección: se reemplazó la instrucción negativa por una plantilla de frase fija con campos para completar entre corchetes, replicando el principio que había funcionado en la Entrada 7 para la oración del Artículo 19 (instrucción positiva con estructura exacta, en lugar de descripción de qué evitar). Se verificó el cambio carácter por carácter, se recargó y se volvió a correr el Caso 2.
+
+Resultado del segundo intento: el párrafo generado fue, otra vez, idéntico al original.
+
+Diagnóstico parcial, no concluyente: se descartó que el problema fuera cache del navegador o falta de recompilación (se forzó recarga completa entre cada intento). Se descartó también que el front-end mostrara un resultado fijo sin relación con el documento subido: al probar con un PDF distinto (Caso 1, concordante), el resultado cambió correctamente, confirmando que el sistema sí lee cada documento y llama a Gemini de forma real en cada caso. No se completó el diagnóstico de la causa raíz (no se verificó mediante un log en el servidor si la versión del prompt efectivamente enviada a la API coincidía con la del archivo editado) — se decidió no continuar esa verificación por prioridad de tiempo.
+
+Qué no falló: en los tres intentos (original y dos correcciones), la oración fija e inmutable del Artículo 19 se reprodujo siempre carácter por carácter, sin alteración. El problema está acotado exclusivamente a la frase libre introductoria.
+
+Por qué se documenta así, sin resolver: es una limitación real sobre el grado de control que un prompt en lenguaje natural ejerce sobre la redacción libre de un LLM, incluso aplicando un principio de diseño que había funcionado para otra parte del mismo prompt. Queda como evidencia para el Análisis crítico de la dimensión "bajo supervisión humana" del framework AIBPS.
