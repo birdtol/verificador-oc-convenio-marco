@@ -157,3 +157,5 @@ Diagnóstico parcial, no concluyente: se descartó que el problema fuera cache d
 Qué no falló: en los tres intentos (original y dos correcciones), la oración fija e inmutable del Artículo 19 se reprodujo siempre carácter por carácter, sin alteración. El problema está acotado exclusivamente a la frase libre introductoria.
 
 Por qué se documenta así, sin resolver: es una limitación real sobre el grado de control que un prompt en lenguaje natural ejerce sobre la redacción libre de un LLM, incluso aplicando un principio de diseño que había funcionado para otra parte del mismo prompt. Queda como evidencia para el Análisis crítico de la dimensión "bajo supervisión humana" del framework AIBPS.
+
+Verificación adicional (25/06/2026): se confirmó que la ambigüedad persiste también en el entorno de producción (Cloud Run, tras guardado y republicación desde AI Studio), no solo en el entorno de preview de desarrollo. Esto descarta que el comportamiento se debiera a un problema de cache o de sincronización entre código y entorno de ejecución — el modelo reproduce la misma ambigüedad de forma consistente entre dos entornos de despliegue distintos.
