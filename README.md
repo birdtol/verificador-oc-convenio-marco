@@ -5,6 +5,8 @@
 
 **Estado actual: v3 — Aplicación web completa desplegada. Extracción de PDF en el navegador, comparación de los tres puntos de verificación, y generación de fundamento normativo y de práctica vía Gemini. Demo pública: https://verificaci-n-de-concordancia-convenio-marco-pba-872200808165.us-west1.run.app**
 
+> El informe completo del TFI (introducción, marco conceptual, metodología, resultados, análisis crítico y conclusiones) se entrega en PDF junto con este repositorio, conforme al formato de entrega de la diplomatura.
+
 ## El problema
 
 En la Contaduría General de la Provincia de Buenos Aires, el control de Órdenes de Compra emitidas bajo la modalidad Convenio Marco incluye verificar que las condiciones consignadas en cada orden sean consistentes entre sí y con lo que establece el Pliego de Bases y Condiciones Particulares correspondiente. Esta verificación se hace hoy de forma manual, revisando cada documento contra el pliego del convenio al que pertenece.
